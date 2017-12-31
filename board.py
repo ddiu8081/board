@@ -1,35 +1,26 @@
-
 # !C:/Users/Administrator/Desktop/demo/python
 # coding=utf-8
 
 # 导入pygame库
-import pygame ,random ,sys ,time  # sys模块中的exit用于退出
+import pygame, random, sys, time  # sys模块中的exit用于退出
 from pygame.locals import *
+import pickle
 
 
 # 定义一个飞机基类
 class Plane(object):
-    """Plane"""
     def __init__(self):
-        # 导弹间隔发射时间1s
-        self.bulletSleepTime = 0.3
-        self.lastShootTime = time.time()
-        # 存储导弹列表
         self.bulletList = []
 
     # 描绘飞机
-    def draw(self ,screen):
-        screen.blit(self.image ,(self.x ,self.y))
-
-    def shoot(self):
-        if time.time( ) -self. lastShootTime >self.bulletSleepTime:
-            self.bulletList.append(Bullet(self.planeName ,self. x +36 ,self.y))
-            self.lastShootTime = time.time()
+    def draw(self, screen):
+        screen.blit(self.image, (self.x, self.y))
 
 
 # 玩家飞机类，继承基类
 class Hero(Plane):
     """Hero"""
+
     def __init__(self):
         Plane.__init__(self)
         planeImageName = 'Resources/hero.png'
@@ -40,22 +31,44 @@ class Hero(Plane):
         self.planeName = 'hero'
 
     # 键盘控制自己飞机
-    def keyHandle(self ,keyValue):
+    def keyHandle(self, keyValue):
         if keyValue == 'left':
             self.x -= 1
         elif keyValue == 'right':
             self.x += 1
 
+
 # 定义敌人飞机类
 class Enemy(Plane):
     """docstring for Enemy"""
-    def __init__(self ,speed):
+
+    def __init__(self, speed):
         super(Enemy, self).__init__()
-        randomImageNum = random.randint(1 ,3)
+        randomImageNum = random.randint(1, 3)
         planeImageName = 'Resources/enemy-' + str(randomImageNum) + '.png'
         self.image = pygame.image.load(planeImageName).convert()
         # 敌人飞机原始位置
-        self.x = random.randint(20 ,400)  # 敌机出现的位置任意
+        self.x = random.randint(20, 400)  # 敌机出现的位置任意
+        self.y = 0
+        self.planeName = 'enemy'
+        self.direction = 'down'  # 用英文表示
+        self.speed = speed  # 移动速度,这个参数现在需要传入
+
+    def move(self):
+        if self.direction == 'down':
+            self.y += self.speed  # 飞机不断往下掉
+
+
+# 定义炸弹
+class Enemybullet(Plane):
+    """docstring for Enemy"""
+
+    def __init__(self, speed):
+        super(Enemybullet, self).__init__()
+        planeImageName = 'Resources/bullet-1.png'
+        self.image = pygame.image.load(planeImageName).convert()
+        # 炸弹原始位置
+        self.x = random.randint(20, 400)  # 炸弹出现的位置任意
         self.y = 0
         self.planeName = 'enemy'
         self.direction = 'down'  # 用英文表示
@@ -71,12 +84,18 @@ class GameInit(object):
     # 类属性
     gameLevel = 1  # 简单模式
     g_ememyList = []  # 前面加上g类似全局变量
+    g_ememybulletList = []  # 前面加上g类似全局变量
     score = 0  # 用于统计分数
+    life = 3  # 用来统计生命
     hero = object
 
     @classmethod
-    def createEnemy(cls ,speed):
+    def createEnemy(cls, speed):
         cls.g_ememyList.append(Enemy(speed))
+
+    @classmethod
+    def createEnemybullet(cls, speed):
+        cls.g_ememybulletList.append(Enemybullet(speed))
 
     @classmethod
     def createHero(cls):
@@ -87,60 +106,78 @@ class GameInit(object):
         cls.createHero()
 
     @classmethod
-    def heroPlaneKey(cls ,keyValue):
+    def heroPlaneKey(cls, keyValue):
         cls.hero.keyHandle(keyValue)
 
     @classmethod
-    def draw(cls ,screen):
+    def draw(cls, screen):
         delPlaneList = []
+        delPlanebulletList = []
         j = 0
+        s = 0
+        heroRect = pygame.Rect(cls.hero.image.get_rect())
+        heroRect.left = cls.hero.x
+        heroRect.top = cls.hero.y
         for i in cls.g_ememyList:
             i.draw(screen)  # 画出敌机
-            # 敌机超过屏幕就从列表中删除
+            enemyRect = pygame.Rect(i.image.get_rect())
+            enemyRect.left = i.x
+            enemyRect.top = i.y
+            # 敌机超过屏幕或者撞到就从列表中删除
+            if heroRect.colliderect(enemyRect):
+                if enemyRect.width == 39:
+                    cls.score += 100  # 小中大飞机分别100,500,1000分
+                if enemyRect.width == 60:
+                    cls.score += 500
+                if enemyRect.width == 78:
+                    cls.score += 1000
+
+                delPlaneList.append(j)
+                j += 1
             if i.y > 680:
                 delPlaneList.append(j)
-            j += 1
+                j += 1
+
         for m in delPlaneList:
             del cls.g_ememyList[m]
 
+        for i in cls.g_ememybulletList:
+            i.draw(screen)  # 画出炸弹
+            enemyRect = pygame.Rect(i.image.get_rect())
+            enemyRect.left = i.x
+            enemyRect.top = i.y
+            # 炸弹超过屏幕或者撞到就从列表中删除
+            if i.y > 680:
+                delPlanebulletList.append(s)
+                s += 1
+
+            if heroRect.colliderect(enemyRect):
+                cls.life -= 1
+                delPlanebulletList.append(s)
+                s += 1
+                print(cls.life)
+
+        for m in delPlanebulletList:
+            del cls.g_ememybulletList[m]
 
         delBulletList = []
         j = 0
+        s = 0
         cls.hero.draw(screen)  # 画出英雄飞机位置
-        for i in cls.hero.bulletList:
-            # 描绘英雄飞机的子弹，超出window从列表中删除
-            i.draw(screen)
-            if i.y < 0:
-                delBulletList.append(j)
-            j += 1
-        # 删除加入到delBulletList中的导弹索引,是同步的
-        for m in delBulletList:
-            del cls.hero.bulletList[m]
 
-            # 更新敌人飞机位置
     @classmethod
     def setXY(cls):
         for i in cls.g_ememyList:
             i.move()
+        for i in cls.g_ememybulletList:
+            i.move()
+
+            # 判断游戏是否结束
 
     @classmethod
     def gameover(cls):
-        heroRect = pygame.Rect(cls.hero.image.get_rect())
-        heroRect.left = cls.hero.x
-        heroRect.top  = cls.hero.y
-        for i in cls.g_ememyList:
-            enemyRect = pygame.Rect(i.image.get_rect())
-            enemyRect.left = i.x
-            enemyRect.top  = i.y
-            if heroRect.colliderect(enemyRect):
-                if enemyRect.width == 39:
-                    cls.score -= 1000  # 小中大飞机分别100,500,1000分
-                elif enemyRect.width == 60:
-                    cls.score += 5000
-                elif enemyRect.width == 78:
-                    cls.score += 1000
-                return False
-        return False
+        if cls.life == 0:
+            return True
 
     # 游戏结束后等待玩家按键
     @classmethod
@@ -159,8 +196,8 @@ class GameInit(object):
         sys.exit(0)
 
     @staticmethod
-    def pause(surface ,image):
-        surface.blit(image ,(0 ,0))
+    def pause(surface, image):
+        surface.blit(image, (0, 0))
         pygame.display.update()
         while True:
             for event in pygame.event.get():
@@ -171,13 +208,13 @@ class GameInit(object):
                         return
 
     @staticmethod
-    def drawText(text ,font ,surface ,x ,y):
+    def drawText(text, font, surface, x, y):
         # 参数1：显示的内容 |参数2：是否开抗锯齿，True平滑一点|参数3：字体颜色|参数4：字体背景颜色
-        content = font.render(text ,False ,(10 ,100 ,200))
+        content = font.render(text, False, (10, 100, 200))
         contentRect = content.get_rect()
         contentRect.left = x
-        contentRect.top  = y
-        surface.blit(content ,contentRect)
+        contentRect.top = y
+        surface.blit(content, contentRect)
 
 
 def main():
@@ -195,6 +232,7 @@ def main():
     # 参数1：字体类型，例如"arial"  参数2：字体大小
     font = pygame.font.SysFont(None, 64)
     font1 = pygame.font.SysFont("arial", 24)
+    font2 = pygame.font.SysFont("arial", 30)
     # 记录游戏开始的时间
     startTime = time.time()
     # 背景图片加载并转换成图像
@@ -208,16 +246,21 @@ def main():
     GameInit.waitForKeyPress()
     # 初始化
     GameInit.gameInit()
-
     while True:
+        f = open(r'history.txt')
+        historyscore = f.readline()
         screen.blit(background, (0, 0))  # 不断覆盖，否则在背景上的图片会重叠
-        screen.blit(gameStartIcon, (0, 0))
+        screen.blit(gameStartIcon, (350, 0))  # 把这个图片换成爱代表生命的爱心
+        screen.blit(gamePauseIcon, (0, 0))
+        GameInit.drawText('%s' % (GameInit.life), font2, screen, 400, 10)
         GameInit.drawText('score:%s' % (GameInit.score), font1, screen, 80, 15)
+        if int(GameInit.score) < int(historyscore):
+            GameInit.drawText('best:%s' % (historyscore), font1, screen, 80, 35)
+        else:
+            GameInit.drawText('best:%s' % (GameInit.score), font1, screen, 80, 35)
         for event in pygame.event.get():
-            # print(event)
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
+            if event.type == pygame.QUIT:
+                GameInit.terminate()
             elif event.type == KEYDOWN:
                 # 判断键盘事件
                 if event.key == K_RIGHT:
@@ -238,17 +281,20 @@ def main():
         # easy模式
         if interval < 10:
             if time.time() - lastEnemyTime >= easyEnemySleepTime:
-                GameInit.createEnemy(1)  # 传入的参数是speed
+                GameInit.createEnemy(0.8)  # 传入的参数是speed
+                GameInit.createEnemybullet(0.8)
                 lastEnemyTime = time.time()
         # middle模式
         elif interval >= 10 and interval < 30:
             if time.time() - lastEnemyTime >= middleEnemySleepTime:
                 GameInit.createEnemy(1)
+                GameInit.createEnemybullet(1)
                 lastEnemyTime = time.time()
         # hard模式
         elif interval >= 30:
             if time.time() - lastEnemyTime >= hardEnemySleepTime:
-                GameInit.createEnemy(1)
+                GameInit.createEnemy(1.2)
+                GameInit.createEnemybullet(1.2)
                 lastEnemyTime = time.time()
         GameInit.setXY()
         GameInit.draw(screen)  # 描绘类的位置
@@ -257,9 +303,16 @@ def main():
             time.sleep(1)  # 睡1s时间,让玩家看到与敌机相撞的画面
             screen.blit(gameover, (0, 0))
             GameInit.drawText('%s' % (GameInit.score), font, screen, 170, 400)
+            f = open(r'history.txt')
+            historyscore = f.readline()
+            if int(GameInit.score) > int(historyscore):
+                f = open(r'history.txt', 'w')
+                f.write(str(GameInit.score))
+                f.close()
             pygame.display.update()
             GameInit.waitForKeyPress()
             break
+
 
 if __name__ == '__main__':
     main()
