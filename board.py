@@ -9,29 +9,23 @@ from pygame.locals import *
 import pickle
 
 
-# 定义一个飞机基类
-class Plane(object):
-    def __init__(self):
-        self.bulletList = []
-
-    # 描绘飞机
+# 定义一个道具基类
+class Prop(object):
+    # 定义一个画图方法
     def draw(self, screen):
         screen.blit(self.image, (self.x, self.y))
 
 
-# 玩家飞机类，继承基类
-class Hero(Plane):
+# 玩家类
+class Role(Prop):
 
     def __init__(self):
-        Plane.__init__(self)
-        planeImageName = 'Resources/role.png'
-        self.image = pygame.image.load(planeImageName).convert_alpha()
+        self.image = pygame.image.load('Resources/role.png').convert_alpha()
         # 玩家原始位置
         self.x = 300
         self.y = 360
-        self.planeName = 'hero'
 
-    # 键盘控制自己飞机
+    # 键盘控制圣诞老人
     def keyHandle(self, keyValue):
         if keyValue == 'left':
             self.x -= 1
@@ -39,43 +33,37 @@ class Hero(Plane):
             self.x += 1
 
 
-# 定义敌人飞机类
-class Enemy(Plane):
-    """docstring for Enemy"""
+# 水果类
+class Fruit(Prop):
 
     def __init__(self, speed):
-        super(Enemy, self).__init__()
-        randomImageNum = random.randint(1, 4)
-        planeImageName = 'Resources/fruit/' + str(randomImageNum) + '.png'
-        self.image = pygame.image.load(planeImageName).convert_alpha()
-        # 敌人飞机原始位置
-        self.x = random.randint(20, 640)  # 敌机出现的位置任意
+        super(Fruit, self).__init__()
+        fruitImage = 'Resources/fruit/' + str(random.randint(1, 4)) + '.png' # 随机选取4种水果的一种
+        self.image = pygame.image.load(fruitImage).convert_alpha()
+        # 定义水果原始位置
+        self.x = random.randint(20, 640)  # 从任意位置掉落水果
         self.y = 0
-        self.planeName = 'enemy'
-        self.direction = 'down'  # 用英文表示
-        self.speed = speed  # 移动速度,这个参数现在需要传入
+        self.name = 'fruit'
+        self.speed = speed  # 传入的移动速度
 
     def move(self):
-        if self.direction == 'down':
-            self.y += self.speed  # 飞机不断往下掉
+        self.y += self.speed
 
 
 # 定义炸弹
-class Enemybullet(Plane):
-    """docstring for Enemy"""
+class Bomb(Prop):
 
     def __init__(self, speed):
-        super(Enemybullet, self).__init__()
-        planeImageName = 'Resources/bomb.png'
-        self.image = pygame.image.load(planeImageName).convert_alpha()
+        super(Bomb, self).__init__()
+        self.image = pygame.image.load('Resources/bomb.png').convert_alpha()
         # 炸弹原始位置
-        self.x = random.randint(20, 640)  # 炸弹出现的位置任意
+        self.x = random.randint(20, 640)  # 从任意位置掉落炸弹
         self.y = 0
-        self.planeName = 'enemy'
-        self.speed = speed  # 移动速度,这个参数现在需要传入
+        self.name = 'bomb'
+        self.speed = speed  # 传入的移动速度
 
     def move(self):
-        self.y += self.speed  # 飞机不断往下掉
+        self.y += self.speed
 
 
 class GameInit(object):
@@ -86,86 +74,88 @@ class GameInit(object):
     g_bombList = []  # 前面加上g类似全局变量
     score = 0  # 用于统计分数
     life = 3  # 用来统计生命
-    hero = object
+    role = object
 
     @classmethod
-    def createEnemy(cls, speed):
-        cls.g_fruitList.append(Enemy(speed))
+    def createFruit(cls, speed):
+        cls.g_fruitList.append(Fruit(speed))
 
     @classmethod
-    def createEnemybullet(cls, speed):
-        cls.g_bombList.append(Enemybullet(speed))
+    def createBomb(cls, speed):
+        cls.g_bombList.append(Bomb(speed))
 
     @classmethod
-    def createHero(cls):
-        cls.hero = Hero()
+    def createRole(cls):
+        cls.role = Role()
 
     @classmethod
     def gameInit(cls):
-        cls.createHero()
+        cls.createRole()
 
     @classmethod
-    def heroPlaneKey(cls, keyValue):
-        cls.hero.keyHandle(keyValue)
+    def rolePlaneKey(cls, keyValue):
+        cls.role.keyHandle(keyValue)
 
     @classmethod
     def draw(cls, screen):
-        delPlaneList = []
-        delPlanebulletList = []
+        delFruitList = []
+        delBombList = []
         j = 0
         s = 0
-        heroRect = pygame.Rect(cls.hero.image.get_rect())
-        heroRect.left = cls.hero.x
-        heroRect.top = cls.hero.y
+        roleRect = pygame.Rect(cls.role.image.get_rect())
+        roleRect.left = cls.role.x
+        roleRect.top = cls.role.y
         for i in cls.g_fruitList:
             i.draw(screen)  # 画出敌机
-            enemyRect = pygame.Rect(i.image.get_rect())
-            enemyRect.left = i.x
-            enemyRect.top = i.y
+            fruitRect = pygame.Rect(i.image.get_rect())
+            fruitRect.left = i.x
+            fruitRect.top = i.y
             # 敌机超过屏幕或者撞到就从列表中删除
-            if heroRect.colliderect(enemyRect):
-                # if enemyRect.width == 39:
+            if roleRect.colliderect(fruitRect):
+                # if fruitRect.width == 39:
                 #     cls.score += 100  # 小中大飞机分别100,500,1000分
-                # if enemyRect.width == 60:
+                # if fruitRect.width == 60:
                 #     cls.score += 500
-                # if enemyRect.width == 78:
+                # if fruitRect.width == 78:
                 #     cls.score += 1000
-                cls.score += 100
 
-                delPlaneList.append(j)
-                j += 1
-            if i.y > 680:
-                delPlaneList.append(j)
+                if i.y <= 360:
+                    cls.score += 100
+                    delFruitList.append(j)
+                    j += 1
+            if i.y > 460:
+                delFruitList.append(j)
                 j += 1
 
-        for m in delPlaneList:
+        for m in delFruitList:
             del cls.g_fruitList[m]
 
         for i in cls.g_bombList:
             i.draw(screen)  # 画出炸弹
-            enemyRect = pygame.Rect(i.image.get_rect())
-            enemyRect.left = i.x
-            enemyRect.top = i.y
+            fruitRect = pygame.Rect(i.image.get_rect())
+            fruitRect.left = i.x
+            fruitRect.top = i.y
             # 炸弹超过屏幕或者撞到就从列表中删除
-            if i.y > 680:
-                delPlanebulletList.append(s)
+            if i.y > 460:
+                delBombList.append(s)
                 s += 1
 
-            if heroRect.colliderect(enemyRect):
-                time.sleep(0.3)
+            if roleRect.colliderect(fruitRect):
+                if i.y <= 360:
+                    time.sleep(0.3)
 
-                cls.life -= 1
-                delPlanebulletList.append(s)
-                s += 1
-                print(cls.life)
+                    cls.life -= 1
+                    delBombList.append(s)
+                    s += 1
+                    print(cls.life)
 
-        for m in delPlanebulletList:
+        for m in delBombList:
             del cls.g_bombList[m]
 
         delBulletList = []
         j = 0
         s = 0
-        cls.hero.draw(screen)  # 画出英雄飞机位置
+        cls.role.draw(screen)  # 画出圣诞老人位置
 
     @classmethod
     def setXY(cls):
@@ -224,10 +214,10 @@ def main():
     pygame.init()
     # 创建一个窗口与背景图片一样大
     ScreenWidth, ScreenHeight = 680, 460
-    easyEnemySleepTime = 2  # 简单模式下每隔1s创建新的敌机
-    middleEnemySleepTime = 1.4
-    hardEnemySleepTime = 1
-    lastEnemyTime = 0
+    easyFruitSleepTime = 2  # 简单模式下每隔1s创建新的敌机
+    middleFruitSleepTime = 1.4
+    hardFruitSleepTime = 1
+    lastFruitTime = 0
     pos = ''
     screen = pygame.display.set_mode((ScreenWidth, ScreenHeight), 0, 32)
     pygame.display.set_caption('圣诞老人接水果')
@@ -264,14 +254,14 @@ def main():
             # historyscore = 0
         # historyscore = f.readline()
         screen.blit(background, (0, 0))  # 不断覆盖，否则在背景上的图片会重叠
-        screen.blit(heartIcon, (350, 10))  # 把这个图片换成爱代表生命的爱心
-        screen.blit(timeIcon, (450, 10))  # 时间条
-        GameInit.drawText('%s' % (GameInit.life), font2, screen, 400, 10)
-        GameInit.drawText('score:%s' % (GameInit.score), font1, screen, 80, 15)
+        screen.blit(heartIcon, (400, 10))  # 把这个图片换成爱代表生命的爱心
+        screen.blit(timeIcon, (490, 10))  # 时间条
+        GameInit.drawText('%s' % (GameInit.life), font2, screen, 450, 10)
+        GameInit.drawText('score:%s' % (GameInit.score), font1, screen, 30, 15)
         if int(GameInit.score) < int(historyscore):
-            GameInit.drawText('best:%s' % (historyscore), font1, screen, 80, 35)
+            GameInit.drawText('best:%s' % (historyscore), font1, screen, 30, 35)
         else:
-            GameInit.drawText('best:%s' % (GameInit.score), font1, screen, 80, 35)
+            GameInit.drawText('best:%s' % (GameInit.score), font1, screen, 30, 35)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 GameInit.terminate()
@@ -287,29 +277,29 @@ def main():
                 pos = ''
 
         if (pos == 'right'):
-            GameInit.heroPlaneKey('right')
+            GameInit.rolePlaneKey('right')
         elif (pos == 'left'):
-            GameInit.heroPlaneKey('left')
+            GameInit.rolePlaneKey('left')
 
         interval = time.time() - startTime
         # easy模式
         if interval < 10:
-            if time.time() - lastEnemyTime >= easyEnemySleepTime:
-                GameInit.createEnemy(0.8)  # 传入的参数是speed
-                GameInit.createEnemybullet(0.5)
-                lastEnemyTime = time.time()
+            if time.time() - lastFruitTime >= easyFruitSleepTime:
+                GameInit.createFruit(0.8)  # 传入的参数是speed
+                GameInit.createBomb(0.5)
+                lastFruitTime = time.time()
         # middle模式
         elif interval >= 10 and interval < 30:
-            if time.time() - lastEnemyTime >= middleEnemySleepTime:
-                GameInit.createEnemy(1)
-                GameInit.createEnemybullet(0.5)
-                lastEnemyTime = time.time()
+            if time.time() - lastFruitTime >= middleFruitSleepTime:
+                GameInit.createFruit(1)
+                GameInit.createBomb(0.5)
+                lastFruitTime = time.time()
         # hard模式
         elif interval >= 30:
-            if time.time() - lastEnemyTime >= hardEnemySleepTime:
-                GameInit.createEnemy(1.2)
-                GameInit.createEnemybullet(0.5)
-                lastEnemyTime = time.time()
+            if time.time() - lastFruitTime >= hardFruitSleepTime:
+                GameInit.createFruit(1.2)
+                GameInit.createBomb(0.5)
+                lastFruitTime = time.time()
         GameInit.setXY()
         GameInit.draw(screen)  # 描绘类的位置
         pygame.display.update()  # 不断更新图片
