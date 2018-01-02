@@ -24,11 +24,11 @@ class Hero(Plane):
 
     def __init__(self):
         Plane.__init__(self)
-        planeImageName = 'Resources/hero.png'
-        self.image = pygame.image.load(planeImageName).convert()
+        planeImageName = 'Resources/role.png'
+        self.image = pygame.image.load(planeImageName).convert_alpha()
         # 玩家原始位置
-        self.x = 200
-        self.y = 600
+        self.x = 300
+        self.y = 360
         self.planeName = 'hero'
 
     # 键盘控制自己飞机
@@ -49,7 +49,7 @@ class Enemy(Plane):
         planeImageName = 'Resources/fruit/' + str(randomImageNum) + '.png'
         self.image = pygame.image.load(planeImageName).convert_alpha()
         # 敌人飞机原始位置
-        self.x = random.randint(20, 400)  # 敌机出现的位置任意
+        self.x = random.randint(20, 640)  # 敌机出现的位置任意
         self.y = 0
         self.planeName = 'enemy'
         self.direction = 'down'  # 用英文表示
@@ -69,15 +69,13 @@ class Enemybullet(Plane):
         planeImageName = 'Resources/bomb.png'
         self.image = pygame.image.load(planeImageName).convert_alpha()
         # 炸弹原始位置
-        self.x = random.randint(20, 400)  # 炸弹出现的位置任意
+        self.x = random.randint(20, 640)  # 炸弹出现的位置任意
         self.y = 0
         self.planeName = 'enemy'
-        self.direction = 'down'  # 用英文表示
         self.speed = speed  # 移动速度,这个参数现在需要传入
 
     def move(self):
-        if self.direction == 'down':
-            self.y += self.speed  # 飞机不断往下掉
+        self.y += self.speed  # 飞机不断往下掉
 
 
 class GameInit(object):
@@ -225,10 +223,10 @@ def main():
     # 初始化pygame
     pygame.init()
     # 创建一个窗口与背景图片一样大
-    ScreenWidth, ScreenHeight = 460, 680
-    easyEnemySleepTime = 1  # 简单模式下每隔1s创建新的敌机
-    middleEnemySleepTime = 0.5
-    hardEnemySleepTime = 0.25
+    ScreenWidth, ScreenHeight = 680, 460
+    easyEnemySleepTime = 2  # 简单模式下每隔1s创建新的敌机
+    middleEnemySleepTime = 1.4
+    hardEnemySleepTime = 1
     lastEnemyTime = 0
     pos = ''
     screen = pygame.display.set_mode((ScreenWidth, ScreenHeight), 0, 32)
@@ -240,11 +238,11 @@ def main():
     # 记录游戏开始的时间
     startTime = time.time()
     # 背景图片加载并转换成图像
-    background = pygame.image.load("Resources/bg_01.png").convert()  # 背景图片
+    background = pygame.image.load("Resources/bg.jpg").convert()  # 背景图片
     gameover = pygame.image.load("Resources/gameover.png").convert()  # 游戏结束图片
     start = pygame.image.load("Resources/startone.png")  # 游戏开始图片
-    gamePauseIcon = pygame.image.load("Resources/Pause.png")
-    gameStartIcon = pygame.image.load("Resources/Start.png")
+    heartIcon = pygame.image.load("Resources/heart.png")
+    timeIcon = pygame.image.load("Resources/time.png")
     screen.blit(start, (0, 0))
     pygame.display.update()  # 开始显示启动图片，直到有Enter键按下才会开始
     GameInit.waitForKeyPress()
@@ -266,8 +264,8 @@ def main():
             # historyscore = 0
         # historyscore = f.readline()
         screen.blit(background, (0, 0))  # 不断覆盖，否则在背景上的图片会重叠
-        screen.blit(gameStartIcon, (350, 0))  # 把这个图片换成爱代表生命的爱心
-        screen.blit(gamePauseIcon, (0, 0))
+        screen.blit(heartIcon, (350, 10))  # 把这个图片换成爱代表生命的爱心
+        screen.blit(timeIcon, (450, 10))  # 时间条
         GameInit.drawText('%s' % (GameInit.life), font2, screen, 400, 10)
         GameInit.drawText('score:%s' % (GameInit.score), font1, screen, 80, 15)
         if int(GameInit.score) < int(historyscore):
@@ -316,7 +314,7 @@ def main():
         GameInit.draw(screen)  # 描绘类的位置
         pygame.display.update()  # 不断更新图片
         if GameInit.gameover():
-            time.sleep(1)  # 睡1s时间,让玩家看到与敌机相撞的画面
+            time.sleep(1)  # 睡1s时间,让玩家看到与炸弹相撞的画面
             screen.blit(gameover, (0, 0))
             GameInit.drawText('%s' % (GameInit.score), font, screen, 170, 400)
             f = open('score.txt','r')
