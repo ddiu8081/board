@@ -2,6 +2,7 @@
 # coding=utf-8
 
 # 导入pygame库
+
 import pygame, random, sys, time, os  # sys模块中的exit用于退出
 from pygame.locals import *
 
@@ -50,11 +51,26 @@ class Bomb(Prop):
 
     def __init__(self, speed):
         super(Bomb, self).__init__()
-        self.image = pygame.image.load('Resources/bomb.png').convert_alpha()
+        self.image = pygame.image.load('Resources/prop/bomb.png').convert_alpha()
         # 炸弹原始位置
         self.x = random.randint(20, 640)  # 从任意位置掉落炸弹
         self.y = 0
         self.name = 'bomb'
+        self.speed = speed  # 传入的移动速度
+
+    def move(self):
+        self.y += self.speed
+
+# 定义星星
+class Star(Prop):
+
+    def __init__(self, speed):
+        super(Star, self).__init__()
+        self.image = pygame.image.load('Resources/prop/star.png').convert_alpha()
+        # 炸弹原始位置
+        self.x = random.randint(20, 640)  # 从任意位置掉落
+        self.y = 0
+        self.name = 'star'
         self.speed = speed  # 传入的移动速度
 
     def move(self):
@@ -101,14 +117,14 @@ class GameInit(object):
         roleRect.left = cls.role.x
         roleRect.top = cls.role.y
         for i in cls.g_fruitList:
-            i.draw(screen)  # 画出敌机
+            i.draw(screen)  # 画出水果
             fruitRect = pygame.Rect(i.image.get_rect())
             fruitRect.left = i.x
             fruitRect.top = i.y
-            # 敌机超过屏幕或者撞到就从列表中删除
+            # 水果超过屏幕或者撞到就从列表中删除
             if roleRect.colliderect(fruitRect):
                 # if fruitRect.width == 39:
-                #     cls.score += 100  # 小中大飞机分别100,500,1000分
+                #     cls.score += 100  # 小中大分别100,500,1000分
                 # if fruitRect.width == 60:
                 #     cls.score += 500
                 # if fruitRect.width == 78:
@@ -147,9 +163,6 @@ class GameInit(object):
         for m in delBombList:
             del cls.g_bombList[m]
 
-        delBulletList = []
-        j = 0
-        s = 0
         cls.role.draw(screen)  # 画出圣诞老人位置
 
     @classmethod
@@ -195,9 +208,9 @@ class GameInit(object):
                         return
 
     @staticmethod
-    def drawText(text, font, surface, x, y):
+    def drawText(text, font, surface, color, x, y):
         # 参数1：显示的内容 |参数2：是否开抗锯齿，True平滑一点|参数3：字体颜色|参数4：字体背景颜色
-        content = font.render(text, False, (10, 100, 200))
+        content = font.render(text, True, color)
         contentRect = content.get_rect()
         contentRect.left = x
         contentRect.top = y
@@ -211,19 +224,21 @@ def main():
     ScreenWidth, ScreenHeight = 680, 460
     FruitSleepTime = [2, 1.4, 1]
     lastFruitTime = 0
+
+
     pos = ''
     screen = pygame.display.set_mode((ScreenWidth, ScreenHeight), 0, 32)
     pygame.display.set_caption('圣诞老人接水果')
     # 参数1：字体类型，例如"arial"  参数2：字体大小
-    font = pygame.font.SysFont(None, 64)
+    font_gameover = pygame.font.SysFont("arial", 64)
     font1 = pygame.font.SysFont("arial", 24)
     font2 = pygame.font.SysFont("arial", 30)
     # 记录游戏开始的时间
     startTime = time.time()
     # 背景图片加载并转换成图像
     background = pygame.image.load("Resources/bg.jpg").convert()  # 背景图片
-    gameover = pygame.image.load("Resources/gameover.png").convert()  # 游戏结束图片
-    start = pygame.image.load("Resources/startone.png")  # 游戏开始图片
+    gameover = pygame.image.load("Resources/gameover.jpg").convert()  # 游戏结束图片
+    start = pygame.image.load("Resources/start.jpg")  # 游戏开始图片
     heartIcon = pygame.image.load("Resources/heart.png")
     timeIcon = pygame.image.load("Resources/time.png")
     screen.blit(start, (0, 0))
@@ -239,22 +254,16 @@ def main():
             f = open('score.txt', 'w+')
             f.write('0')
             historyscore = 0
-        # try:
-        #     f = open('score.txt','r')
-        # except FileNotFoundError:
-        #     f = open('score.txt', 'w+')
-        #     f.write('0')
-            # historyscore = 0
-        # historyscore = f.readline()
+
         screen.blit(background, (0, 0))  # 不断覆盖，否则在背景上的图片会重叠
         screen.blit(heartIcon, (400, 10))  # 生命图标
         screen.blit(timeIcon, (490, 10))  # 时间条
-        GameInit.drawText('%s' % (GameInit.life), font2, screen, 450, 10)
-        GameInit.drawText('score:%s' % (GameInit.score), font1, screen, 30, 15)
+        GameInit.drawText('%s' % (GameInit.life), font2, screen, (10, 100, 200), 450, 10)
+        GameInit.drawText('score:%s' % (GameInit.score), font1, screen, (10, 100, 200), 30, 15)
         if int(GameInit.score) < int(historyscore):
-            GameInit.drawText('best:%s' % (historyscore), font1, screen, 30, 35)
+            GameInit.drawText('best:%s' % (historyscore), font1, screen, (10, 100, 200), 30, 35)
         else:
-            GameInit.drawText('best:%s' % (GameInit.score), font1, screen, 30, 35)
+            GameInit.drawText('best:%s' % (GameInit.score), font1, screen, (10, 100, 200), 30, 35)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 GameInit.terminate()
@@ -299,7 +308,7 @@ def main():
         if GameInit.gameover():
             time.sleep(1)  # 睡1s时间,让玩家看到与炸弹相撞的画面
             screen.blit(gameover, (0, 0))
-            GameInit.drawText('%s' % (GameInit.score), font, screen, 170, 400)
+            GameInit.drawText('score:%s' % (GameInit.score), font_gameover, screen, (255, 255, 255), 70, 240)
             f = open('score.txt','r')
             historyscore = f.readline()
             if int(GameInit.score) > int(historyscore):
