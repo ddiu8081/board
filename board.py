@@ -2,19 +2,14 @@
 # coding=utf-8
 
 # 导入pygame库
-import os
-
-import pygame, random, sys, time  # sys模块中的exit用于退出
+import pygame, random, sys, time, os  # sys模块中的exit用于退出
 from pygame.locals import *
-import pickle
-
 
 # 定义一个道具基类
 class Prop(object):
     # 定义一个画图方法
     def draw(self, screen):
         screen.blit(self.image, (self.x, self.y))
-
 
 # 玩家类
 class Role(Prop):
@@ -214,9 +209,7 @@ def main():
     pygame.init()
     # 创建一个窗口与背景图片一样大
     ScreenWidth, ScreenHeight = 680, 460
-    easyFruitSleepTime = 2  # 简单模式下每隔1s创建新的敌机
-    middleFruitSleepTime = 1.4
-    hardFruitSleepTime = 1
+    FruitSleepTime = [2, 1.4, 1]
     lastFruitTime = 0
     pos = ''
     screen = pygame.display.set_mode((ScreenWidth, ScreenHeight), 0, 32)
@@ -254,7 +247,7 @@ def main():
             # historyscore = 0
         # historyscore = f.readline()
         screen.blit(background, (0, 0))  # 不断覆盖，否则在背景上的图片会重叠
-        screen.blit(heartIcon, (400, 10))  # 把这个图片换成爱代表生命的爱心
+        screen.blit(heartIcon, (400, 10))  # 生命图标
         screen.blit(timeIcon, (490, 10))  # 时间条
         GameInit.drawText('%s' % (GameInit.life), font2, screen, 450, 10)
         GameInit.drawText('score:%s' % (GameInit.score), font1, screen, 30, 15)
@@ -284,19 +277,19 @@ def main():
         interval = time.time() - startTime
         # easy模式
         if interval < 10:
-            if time.time() - lastFruitTime >= easyFruitSleepTime:
+            if time.time() - lastFruitTime >= FruitSleepTime[0]:
                 GameInit.createFruit(0.8)  # 传入的参数是speed
                 GameInit.createBomb(0.5)
                 lastFruitTime = time.time()
         # middle模式
         elif interval >= 10 and interval < 30:
-            if time.time() - lastFruitTime >= middleFruitSleepTime:
+            if time.time() - lastFruitTime >= FruitSleepTime[1]:
                 GameInit.createFruit(1)
                 GameInit.createBomb(0.5)
                 lastFruitTime = time.time()
         # hard模式
         elif interval >= 30:
-            if time.time() - lastFruitTime >= hardFruitSleepTime:
+            if time.time() - lastFruitTime >= FruitSleepTime[2]:
                 GameInit.createFruit(1.2)
                 GameInit.createBomb(0.5)
                 lastFruitTime = time.time()
