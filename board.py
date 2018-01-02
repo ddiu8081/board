@@ -2,6 +2,8 @@
 # coding=utf-8
 
 # 导入pygame库
+import os
+
 import pygame, random, sys, time  # sys模块中的exit用于退出
 from pygame.locals import *
 import pickle
@@ -19,7 +21,6 @@ class Plane(object):
 
 # 玩家飞机类，继承基类
 class Hero(Plane):
-    """Hero"""
 
     def __init__(self):
         Plane.__init__(self)
@@ -44,9 +45,9 @@ class Enemy(Plane):
 
     def __init__(self, speed):
         super(Enemy, self).__init__()
-        randomImageNum = random.randint(1, 3)
-        planeImageName = 'Resources/enemy-' + str(randomImageNum) + '.png'
-        self.image = pygame.image.load(planeImageName).convert()
+        randomImageNum = random.randint(1, 4)
+        planeImageName = 'Resources/fruit/' + str(randomImageNum) + '.png'
+        self.image = pygame.image.load(planeImageName).convert_alpha()
         # 敌人飞机原始位置
         self.x = random.randint(20, 400)  # 敌机出现的位置任意
         self.y = 0
@@ -65,8 +66,8 @@ class Enemybullet(Plane):
 
     def __init__(self, speed):
         super(Enemybullet, self).__init__()
-        planeImageName = 'Resources/bullet-1.png'
-        self.image = pygame.image.load(planeImageName).convert()
+        planeImageName = 'Resources/bomb.png'
+        self.image = pygame.image.load(planeImageName).convert_alpha()
         # 炸弹原始位置
         self.x = random.randint(20, 400)  # 炸弹出现的位置任意
         self.y = 0
@@ -83,19 +84,19 @@ class GameInit(object):
     """GameInit"""
     # 类属性
     gameLevel = 1  # 简单模式
-    g_ememyList = []  # 前面加上g类似全局变量
-    g_ememybulletList = []  # 前面加上g类似全局变量
+    g_fruitList = []  # 前面加上g类似全局变量
+    g_bombList = []  # 前面加上g类似全局变量
     score = 0  # 用于统计分数
     life = 3  # 用来统计生命
     hero = object
 
     @classmethod
     def createEnemy(cls, speed):
-        cls.g_ememyList.append(Enemy(speed))
+        cls.g_fruitList.append(Enemy(speed))
 
     @classmethod
     def createEnemybullet(cls, speed):
-        cls.g_ememybulletList.append(Enemybullet(speed))
+        cls.g_bombList.append(Enemybullet(speed))
 
     @classmethod
     def createHero(cls):
@@ -118,19 +119,20 @@ class GameInit(object):
         heroRect = pygame.Rect(cls.hero.image.get_rect())
         heroRect.left = cls.hero.x
         heroRect.top = cls.hero.y
-        for i in cls.g_ememyList:
+        for i in cls.g_fruitList:
             i.draw(screen)  # 画出敌机
             enemyRect = pygame.Rect(i.image.get_rect())
             enemyRect.left = i.x
             enemyRect.top = i.y
             # 敌机超过屏幕或者撞到就从列表中删除
             if heroRect.colliderect(enemyRect):
-                if enemyRect.width == 39:
-                    cls.score += 100  # 小中大飞机分别100,500,1000分
-                if enemyRect.width == 60:
-                    cls.score += 500
-                if enemyRect.width == 78:
-                    cls.score += 1000
+                # if enemyRect.width == 39:
+                #     cls.score += 100  # 小中大飞机分别100,500,1000分
+                # if enemyRect.width == 60:
+                #     cls.score += 500
+                # if enemyRect.width == 78:
+                #     cls.score += 1000
+                cls.score += 100
 
                 delPlaneList.append(j)
                 j += 1
@@ -139,9 +141,9 @@ class GameInit(object):
                 j += 1
 
         for m in delPlaneList:
-            del cls.g_ememyList[m]
+            del cls.g_fruitList[m]
 
-        for i in cls.g_ememybulletList:
+        for i in cls.g_bombList:
             i.draw(screen)  # 画出炸弹
             enemyRect = pygame.Rect(i.image.get_rect())
             enemyRect.left = i.x
@@ -152,13 +154,15 @@ class GameInit(object):
                 s += 1
 
             if heroRect.colliderect(enemyRect):
+                time.sleep(0.3)
+
                 cls.life -= 1
                 delPlanebulletList.append(s)
                 s += 1
                 print(cls.life)
 
         for m in delPlanebulletList:
-            del cls.g_ememybulletList[m]
+            del cls.g_bombList[m]
 
         delBulletList = []
         j = 0
@@ -167,9 +171,9 @@ class GameInit(object):
 
     @classmethod
     def setXY(cls):
-        for i in cls.g_ememyList:
+        for i in cls.g_fruitList:
             i.move()
-        for i in cls.g_ememybulletList:
+        for i in cls.g_bombList:
             i.move()
 
             # 判断游戏是否结束
@@ -228,7 +232,7 @@ def main():
     lastEnemyTime = 0
     pos = ''
     screen = pygame.display.set_mode((ScreenWidth, ScreenHeight), 0, 32)
-    pygame.display.set_caption('飞机大战')
+    pygame.display.set_caption('圣诞老人接水果')
     # 参数1：字体类型，例如"arial"  参数2：字体大小
     font = pygame.font.SysFont(None, 64)
     font1 = pygame.font.SysFont("arial", 24)
@@ -247,8 +251,20 @@ def main():
     # 初始化
     GameInit.gameInit()
     while True:
-        f = open(r'history.txt')
-        historyscore = f.readline()
+        if os.path.exists('score.txt'):
+            f = open('score.txt', 'r')
+            historyscore = f.readline()
+        else:
+            f = open('score.txt', 'w+')
+            f.write('0')
+            historyscore = 0
+        # try:
+        #     f = open('score.txt','r')
+        # except FileNotFoundError:
+        #     f = open('score.txt', 'w+')
+        #     f.write('0')
+            # historyscore = 0
+        # historyscore = f.readline()
         screen.blit(background, (0, 0))  # 不断覆盖，否则在背景上的图片会重叠
         screen.blit(gameStartIcon, (350, 0))  # 把这个图片换成爱代表生命的爱心
         screen.blit(gamePauseIcon, (0, 0))
@@ -282,19 +298,19 @@ def main():
         if interval < 10:
             if time.time() - lastEnemyTime >= easyEnemySleepTime:
                 GameInit.createEnemy(0.8)  # 传入的参数是speed
-                GameInit.createEnemybullet(0.8)
+                GameInit.createEnemybullet(0.5)
                 lastEnemyTime = time.time()
         # middle模式
         elif interval >= 10 and interval < 30:
             if time.time() - lastEnemyTime >= middleEnemySleepTime:
                 GameInit.createEnemy(1)
-                GameInit.createEnemybullet(1)
+                GameInit.createEnemybullet(0.5)
                 lastEnemyTime = time.time()
         # hard模式
         elif interval >= 30:
             if time.time() - lastEnemyTime >= hardEnemySleepTime:
                 GameInit.createEnemy(1.2)
-                GameInit.createEnemybullet(1.2)
+                GameInit.createEnemybullet(0.5)
                 lastEnemyTime = time.time()
         GameInit.setXY()
         GameInit.draw(screen)  # 描绘类的位置
@@ -303,10 +319,10 @@ def main():
             time.sleep(1)  # 睡1s时间,让玩家看到与敌机相撞的画面
             screen.blit(gameover, (0, 0))
             GameInit.drawText('%s' % (GameInit.score), font, screen, 170, 400)
-            f = open(r'history.txt')
+            f = open('score.txt','r')
             historyscore = f.readline()
             if int(GameInit.score) > int(historyscore):
-                f = open(r'history.txt', 'w')
+                f = open('score.txt', 'w')
                 f.write(str(GameInit.score))
                 f.close()
             pygame.display.update()
