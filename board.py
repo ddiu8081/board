@@ -142,6 +142,7 @@ class GameInit(object):
             del cls.g_fruitList[m]
 
         for i in cls.g_bombList:
+            pump = pygame.image.load("Resources/pump.png")  # 爆炸特效
             i.draw(screen)  # 画出炸弹
             fruitRect = pygame.Rect(i.image.get_rect())
             fruitRect.left = i.x
@@ -153,6 +154,9 @@ class GameInit(object):
 
             if roleRect.colliderect(fruitRect):
                 if i.y <= 360:
+                    # 碰到了炸弹
+
+                    screen.blit(pump, (i.x, i.y))  # 画出爆炸
                     time.sleep(0.3)
 
                     cls.life -= 1
