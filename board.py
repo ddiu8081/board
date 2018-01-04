@@ -123,15 +123,14 @@ class GameInit(object):
             fruitRect.top = i.y
             # 水果超过屏幕或者撞到就从列表中删除
             if roleRect.colliderect(fruitRect):
-                # if fruitRect.width == 39:
-                #     cls.score += 100  # 小中大分别100,500,1000分
-                # if fruitRect.width == 60:
-                #     cls.score += 500
-                # if fruitRect.width == 78:
-                #     cls.score += 1000
-
                 if i.y <= 360:
-                    cls.score += 100
+                    if fruitRect.width == 35:
+                        cls.score += 100  # 小中大分别100,500,1000分
+                    if fruitRect.width == 43:
+                        cls.score += 200
+                    if fruitRect.width == 49:
+                        cls.score += 300
+                    # cls.score += 100
                     delFruitList.append(j)
                     j += 1
             if i.y > 460:
